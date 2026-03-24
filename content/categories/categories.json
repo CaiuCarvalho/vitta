@@ -1,0 +1,17 @@
+[
+  {
+    "slug": "produtos-naturais",
+    "name": "Produtos Naturais",
+    "description": "Suplementos e produtos naturais de alta qualidade."
+  },
+  {
+    "slug": "vitaminas",
+    "name": "Vitaminas",
+    "description": "Vitaminas essenciais para o seu bem-estar diário."
+  },
+  {
+    "slug": "fitness",
+    "name": "Fitness",
+    "description": "Tudo para performance e recuperação muscular."
+  }
+]

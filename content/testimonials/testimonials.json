@@ -1,0 +1,20 @@
+[
+  {
+    "id": "test-001",
+    "name": "Maria Silva",
+    "text": "Produtos de altíssima qualidade! Entrega rápida e atendimento excelente.",
+    "rating": 5
+  },
+  {
+    "id": "test-002",
+    "name": "João Oliveira",
+    "text": "O melhor e-commerce de suplementos que já usei. Recomendo!",
+    "rating": 5
+  },
+  {
+    "id": "test-003",
+    "name": "Ana Costa",
+    "text": "Preços justos e produtos de procedência confiável. Voltarei a comprar!",
+    "rating": 4
+  }
+]

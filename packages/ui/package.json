@@ -1,0 +1,13 @@
+{
+  "name": "@vitta/ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "lint": "echo \"No lint configured yet\""
+  },
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}
