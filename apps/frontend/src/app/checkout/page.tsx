@@ -1,307 +1,259 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/context/CartContext";
+import { Loader2, ChevronRight, Truck } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { calculateShipping, UserProfile, ShippingAddress, CheckoutPayload } from "@vitta/utils";
+import { trackBeginCheckout } from "@/lib/analytics";
 
-// ============================================================
-// Schema de validação
-// ============================================================
-
-const checkoutSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(3, "O nome deve ter pelo menos 3 caracteres.")
-    .max(100)
-    .refine((s) => !/<>/.test(s), "Caracteres de script não permitidos."),
-  email: z.string().trim().email("E-mail inválido."),
-  cep: z
-    .string()
-    .trim()
-    .regex(/^\d{5}-?\d{3}$/, "CEP inválido. Ex: 12345-678"),
-  street: z
-    .string()
-    .trim()
-    .min(5, "O logradouro deve ter pelo menos 5 caracteres.")
-    .refine((s) => !/<>/.test(s), "Caracteres de script não permitidos."),
-  number: z.string().trim().min(1, "O número é obrigatório."),
-});
-
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
-
-// ============================================================
-// Componente auxiliar: campo de formulário
-// ============================================================
-
-const inputClass =
-  "w-full px-4 py-3 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50";
-
-interface FieldError {
-  message?: string;
-}
-interface FormFieldProps {
-  id: string;
-  label: string;
-  error?: FieldError;
-  children: React.ReactNode;
-}
-
-function FormField({ id, label, error, children }: FormFieldProps) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-muted-foreground mb-1">
-        {label}
-      </label>
-      {children}
-      {error && (
-        <p className="text-destructive text-sm mt-1 font-medium">{error.message}</p>
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-// Componente auxiliar: cabeçalho de etapa
-// ============================================================
-
-function StepHeader({ step, title }: { step: number; title: string }) {
-  return (
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-        {step}
-      </div>
-      <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-    </div>
-  );
-}
-
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
-
-// ============================================================
-// Página de Checkout
-// ============================================================
+// Sub-componentes Refatorados
+import { PersonalDataForm } from "@/components/checkout/PersonalDataForm";
+import { AddressSelector } from "@/components/checkout/AddressSelector";
+import { OrderSummary } from "@/components/checkout/OrderSummary";
 
 export default function CheckoutPage() {
-  const { items, subtotal } = useCart();
-  const shipping = subtotal > 150 ? 0 : 25.0;
-  const total = subtotal + shipping;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      cep: "",
+  const router = useRouter();
+  const { user, token, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { items, subtotal, clearCart } = useCart();
+  
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Estados do Form
+  const [paymentMethod, setPaymentMethod] = useState<"PIX" | "CARD">("PIX");
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    taxId: "",
+    phone: "",
+    newAddress: {
+      zipCode: "",
       street: "",
       number: "",
-    },
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "SP"
+    } as ShippingAddress
   });
 
-  const onSubmit = async (data: CheckoutFormValues) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Dados enviados ao backend:", data);
-    toast.success("Pedido confirmado com sucesso!", {
-      description: "Seus dados foram validados e o pedido está em processamento.",
-    });
+  // Cálculo de Frete Dinâmico (Sincronizado com Backend via @vitta/utils)
+  const getShippingCost = () => {
+    const activeZip = showNewAddressForm 
+      ? formData.newAddress.zipCode
+      : addresses.find(a => a.id === selectedAddressId)?.zipCode;
+    
+    return calculateShipping(activeZip || "", subtotal);
   };
 
+  const shippingCost = getShippingCost();
+
+  // 1. Guard de Autenticação e Carrinho (deps originais preservadas para evitar race condition com cart hydration)
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) router.push("/login?redirect=/checkout");
+      else if (items.length === 0) {
+        toast.error("Seu carrinho está vazio.");
+        router.push("/cart");
+      }
+    }
+  }, [authLoading, isAuthenticated, items.length, router]);
+
+  // GA4: begin_checkout — dispara uma única vez quando o usuário chega ao checkout com itens
+  const hasTrackedCheckout = useRef(false);
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && items.length > 0 && !hasTrackedCheckout.current) {
+      hasTrackedCheckout.current = true;
+      trackBeginCheckout(
+        items.map((i) => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.quantity })),
+        subtotal
+      );
+    }
+  }, [authLoading, isAuthenticated, items, subtotal]);
+
+  // 2. Carregar Perfil para Smart Checkout
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id || !token) return;
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (res.ok) {
+          const data = result.data;
+          setProfile(data);
+          setAddresses(data.addresses || []);
+          
+          const defaultAddr = data.addresses?.find((a: ShippingAddress) => a.isDefault) || data.addresses?.[0];
+          if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+          else setShowNewAddressForm(true);
+          
+          setFormData(prev => ({
+            ...prev,
+            taxId: data.taxId || "",
+            phone: data.phone || ""
+          }));
+        }
+      } catch {
+        toast.error("Erro ao carregar dados do usuário");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) fetchProfile();
+  }, [isAuthenticated, user?.id, token]);
+
+  const handleSubmit = async () => {
+    if (items.length === 0) return;
+
+    setSubmitting(true);
+    try {
+      const payload: CheckoutPayload = {
+        items: items.map(i => ({ 
+          productId: i.id, 
+          quantity: i.quantity,
+          name: i.name,
+          price: i.price 
+        })),
+        paymentMethod,
+        customer: {
+          taxId: formData.taxId,
+          phone: formData.phone
+        },
+        addressId: showNewAddressForm ? undefined : selectedAddressId,
+        newAddress: showNewAddressForm ? formData.newAddress : undefined
+      };
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/checkout`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        toast.success("Pedido realizado!");
+        clearCart();
+        const params = new URLSearchParams(result.data);
+        router.push(`/pedido/confirmado?${params.toString()}`);
+      } else {
+        toast.error(result.error || "Erro no checkout");
+      }
+    } catch {
+      toast.error("Falha de conexão");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading || authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const isMissingPersonalData = !profile?.taxId || !profile?.phone;
+
   return (
-    <div className="min-h-screen bg-transparent flex flex-col">
-      {/* Header */}
-      <header className="py-6 border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="container mx-auto px-6 md:px-12 flex items-center justify-between">
-          <Link href="/" className="font-serif text-2xl font-semibold text-foreground tracking-wide">
-            Vitta
-          </Link>
-          <div className="flex items-center gap-2 text-muted-foreground font-medium text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-primary">
-              <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
-            </svg>
-            Checkout Seguro
-          </div>
+    <div className="min-h-screen bg-[#0a0a0a] pt-32 pb-40 relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px] animate-pulse delay-700" />
+      </div>
+
+      <div className="container mx-auto px-6 max-w-7xl relative z-10">
+        {/* Breadcrumb / Progress */}
+        <div className="flex flex-wrap items-center gap-4 mb-12 text-[10px] font-black uppercase tracking-[0.3em]">
+          <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => router.push("/cart")}>CARRINHO</span>
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
+          <span className="text-primary italic">CHECKOUT ELITE</span>
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
+          <span className="text-muted-foreground/40">PAGAMENTO</span>
         </div>
-      </header>
 
-      <main className="flex-1">
-        <div className="container mx-auto px-6 md:px-12 py-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-12"
-          >
-            {/* Formulário */}
-            <form onSubmit={handleSubmit(onSubmit)} className="lg:col-span-7 space-y-10">
-              {/* Dados de Contato */}
-              <section>
-                <StepHeader step={1} title="Dados de Contato" />
-                <div className="space-y-4 p-8 bg-card rounded-3xl border border-border">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField id="fullName" label="Nome Completo" error={errors.fullName}>
-                      <input
-                        id="fullName"
-                        {...register("fullName")}
-                        type="text"
-                        className={inputClass}
-                        placeholder="Maria Silva"
-                        disabled={isSubmitting}
-                      />
-                    </FormField>
-                    <FormField id="email" label="E-mail" error={errors.email}>
-                      <input
-                        id="email"
-                        {...register("email")}
-                        type="email"
-                        className={inputClass}
-                        placeholder="maria@example.com"
-                        disabled={isSubmitting}
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </section>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          <div className="lg:col-span-7 space-y-12">
+            <header className="space-y-2">
+              <h1 className="text-5xl md:text-7xl font-display uppercase italic font-black tracking-tighter leading-none">
+                FINALIZAR <br />
+                <span className="text-primary">PEDIDO</span>
+              </h1>
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest max-w-md">
+                Você está a um passo de garantir a excelência do Manto Brasileiro. Preencha os detalhes para envio.
+              </p>
+            </header>
 
-              {/* Endereço de Entrega */}
-              <section>
-                <StepHeader step={2} title="Endereço de Entrega" />
-                <div className="space-y-4 p-8 bg-card rounded-3xl border border-border">
-                  <FormField id="cep" label="CEP" error={errors.cep}>
-                    <input
-                      id="cep"
-                      {...register("cep")}
-                      type="text"
-                      className={`${inputClass} md:w-1/2`}
-                      placeholder="00000-000"
-                      disabled={isSubmitting}
-                    />
-                  </FormField>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <FormField id="street" label="Logradouro / Rua" error={errors.street}>
-                        <input
-                          id="street"
-                          {...register("street")}
-                          type="text"
-                          className={inputClass}
-                          placeholder="Rua das Flores"
-                          disabled={isSubmitting}
-                        />
-                      </FormField>
-                    </div>
-                    <FormField id="number" label="Número" error={errors.number}>
-                      <input
-                        id="number"
-                        {...register("number")}
-                        type="text"
-                        className={inputClass}
-                        placeholder="123"
-                        disabled={isSubmitting}
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </section>
+            <div className="space-y-16 pt-8">
+              {/* Seção 1: Dados Pessoais (Smart) */}
+              <PersonalDataForm 
+                userProfile={profile}
+                formData={formData}
+                onChange={(field, val) => setFormData(p => ({ ...p, [field]: val }))}
+              />
 
-              {/* Pagamento */}
-              <section>
-                <StepHeader step={3} title="Pagamento" />
-                <div className="p-8 bg-card rounded-3xl border border-border">
-                  <div className="flex items-center justify-center py-10 border-2 border-dashed border-border rounded-2xl bg-background mb-6">
-                    <p className="text-muted-foreground font-medium text-sm text-center">
-                      Integração com Stripe / Mercado Pago em breve
-                    </p>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || items.length === 0}
-                    className="w-full py-4 text-lg font-bold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-3"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Processando...
-                      </>
-                    ) : (
-                      "Confirmar Pedido — Pagamento Seguro"
-                    )}
-                  </button>
-                  {items.length === 0 && (
-                    <p className="text-center text-sm text-muted-foreground mt-3">
-                      Seu carrinho está vazio.{" "}
-                      <Link href="/#produtos" className="text-primary underline">
-                        Adicione produtos
-                      </Link>
-                      .
-                    </p>
-                  )}
-                </div>
-              </section>
-            </form>
-
-            {/* Resumo da Compra */}
-            <div className="lg:col-span-5 hidden lg:block">
-              <div className="p-8 bg-card rounded-3xl border border-border sticky top-8">
-                <h3 className="text-lg font-bold text-foreground mb-6">Detalhes da Compra</h3>
-
-                {items.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">Nenhum item no carrinho.</p>
-                ) : (
-                  <div className="space-y-4 mb-6">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-rose-soft shrink-0" />
-                          <div>
-                            <p className="text-sm font-semibold text-foreground line-clamp-1">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p>
-                          </div>
-                        </div>
-                        <span className="text-sm font-medium text-foreground shrink-0">
-                          {formatCurrency(item.price * item.quantity)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="border-t border-border pt-6 space-y-3">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Subtotal</span>
-                    <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Frete</span>
-                    {shipping === 0 ? (
-                      <span className="font-bold text-primary">Grátis</span>
-                    ) : (
-                      <span className="font-medium text-foreground">{formatCurrency(shipping)}</span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-base font-bold text-foreground">Total</span>
-                    <span className="text-2xl font-black text-gold">{formatCurrency(total)}</span>
-                  </div>
-                </div>
-              </div>
+              {/* Seção 2: Endereço */}
+              <AddressSelector 
+                addresses={addresses}
+                selectedId={selectedAddressId}
+                onSelect={setSelectedAddressId}
+                showNewForm={showNewAddressForm}
+                setShowNewForm={setShowNewAddressForm}
+                newAddress={formData.newAddress}
+                onNewAddressChange={(field, val) => setFormData(p => ({ 
+                  ...p, 
+                  newAddress: { ...p.newAddress, [field]: val } 
+                }))}
+                stepNumber={isMissingPersonalData ? 2 : 1}
+              />
             </div>
-          </motion.div>
+          </div>
+
+          <aside className="lg:col-span-5 sticky top-32">
+            <OrderSummary 
+              items={items}
+              subtotal={subtotal}
+              shippingCost={shippingCost}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              onSubmit={handleSubmit}
+              isSubmitting={submitting}
+            />
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1 }}
+              className="flex items-center gap-5 p-6 mt-10 bg-card/20 backdrop-blur-md rounded-[2rem] border border-border/30 hover:border-primary/30 transition-all duration-500 group"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+                <Truck className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-tight text-foreground">Envio Expresso Agon</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Logística de alta performance para todo o Brasil 🇧🇷</p>
+              </div>
+            </motion.div>
+          </aside>
+
         </div>
-      </main>
+      </div>
     </div>
   );
 }

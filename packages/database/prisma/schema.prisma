@@ -1,23 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password_hash String
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  orders        Order[]
+  id                 String              @id @default(uuid())
+  name               String
+  email              String              @unique
+  password_hash      String
+  role               Role                @default(USER)
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  phone              String?
+  avatarUrl          String?             @map("avatar_url")
+  taxId              String?             @map("tax_id")
+  addresses          Address[]
+  orders             Order[]
+  verificationTokens VerificationToken[]
+  wishlistItems      WishlistItem[]
 
   @@map("users")
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String   @map("zip_code")
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
 }
 
 model Category {
@@ -27,47 +52,43 @@ model Category {
   description String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
   products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  imageUrl    String?  @map("image_url")
-  categoryId  String   @map("category_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  category    Category @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
+  id            String         @id @default(uuid())
+  name          String
+  description   String
+  price         Float
+  stock         Int            @default(0)
+  imageUrl      String?        @map("image_url")
+  categoryId    String         @map("category_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  orderItems    OrderItem[]
+  category      Category       @relation(fields: [categoryId], references: [id])
+  wishlistItems WishlistItem[]
 
   @@map("products")
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
 model Order {
-  id        String      @id @default(uuid())
-  userId    String      @map("user_id")
-  total     Float
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
+  id               String      @id @default(uuid())
+  userId           String      @map("user_id")
+  total            Float
+  status           OrderStatus @default(PENDING)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  abacateBillingId String?     @map("abacate_billing_id")
+  shippedAt        DateTime?   @map("shipped_at")
+  trackingCode     String?     @map("tracking_code")
+  items            OrderItem[]
+  user             User        @relation(fields: [userId], references: [id])
 
-  user      User        @relation(fields: [userId], references: [id])
-  items     OrderItem[]
-
+  @@index([userId])
+  @@index([abacateBillingId])
   @@map("orders")
 }
 
@@ -76,11 +97,49 @@ model OrderItem {
   orderId   String   @map("order_id")
   productId String   @map("product_id")
   quantity  Int
-  unitPrice Float    @map("unit_price") // Preço no momento da compra
+  unitPrice Float    @map("unit_price")
   createdAt DateTime @default(now()) @map("created_at")
-
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String
+  type      String
+  newValue  String   @map("new_value")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("verification_tokens")
+}
+
+model WishlistItem {
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@map("wishlist_items")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  FAILED
 }

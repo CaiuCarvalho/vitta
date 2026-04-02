@@ -2,11 +2,18 @@ import { prisma } from "@vitta/database";
 import { CreateCategoryDTO, UpdateCategoryDTO } from "../dtos/category.dto";
 
 export class CategoryService {
-  static async getAllCategories() {
-    return prisma.category.findMany({
-      include: { products: true },
-      orderBy: { name: "asc" },
-    });
+  static async getAllCategories(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    const [categories, total] = await Promise.all([
+      prisma.category.findMany({
+        include: { _count: { select: { products: true } } },
+        orderBy: { name: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.category.count(),
+    ]);
+    return { categories, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   static async getCategoryById(id: string) {

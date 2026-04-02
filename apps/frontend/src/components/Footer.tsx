@@ -1,53 +1,57 @@
-import { NAV_LINKS } from "@/types";
+import { Instagram, Facebook, Twitter } from "lucide-react";
+import Link from "next/link";
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer id="contato" className="py-16 bg-charcoal text-primary-foreground/70">
-      <div className="container mx-auto px-6 md:px-12">
-        <div className="grid md:grid-cols-3 gap-12">
+    <footer className="bg-gradient-brasil py-16 text-primary-foreground">
+      <div className="container mx-auto">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <h3 className="font-serif text-2xl font-semibold text-primary-foreground mb-4">
-              Vitta
+            <h3 className="font-display text-2xl tracking-wider uppercase italic font-black">
+              AGON
             </h3>
-            <p className="font-sans text-sm leading-relaxed text-pretty max-w-xs">
-              Cuidados capilares premium para quem valoriza a beleza autêntica e o autocuidado como ritual.
+            <p className="mt-3 text-sm text-primary-foreground/70">
+              A loja oficial do torcedor de elite. Qualidade, paixão e entrega rápida.
             </p>
           </div>
 
           <div>
-            <h4 className="font-sans text-xs tracking-[0.2em] uppercase text-primary-foreground mb-4">
-              Navegação
-            </h4>
-            <div className="flex flex-col gap-3">
-              {NAV_LINKS.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="font-sans text-sm hover:text-primary-foreground transition-colors duration-200"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
+            <h4 className="font-display text-lg tracking-wide">Links</h4>
+            <ul className="mt-3 space-y-2 text-sm text-primary-foreground/70">
+              <li><Link href="/" className="transition-colors hover:text-secondary">Início</Link></li>
+              <li><Link href="/products" className="transition-colors hover:text-secondary">Produtos</Link></li>
+              <li><Link href="#categorias" className="transition-colors hover:text-secondary">Categorias</Link></li>
+              <li><Link href="#depoimentos" className="transition-colors hover:text-secondary">Depoimentos</Link></li>
+            </ul>
           </div>
 
           <div>
-            <h4 className="font-sans text-xs tracking-[0.2em] uppercase text-primary-foreground mb-4">
-              Contato
-            </h4>
-            <div className="flex flex-col gap-3 font-sans text-sm">
-              <p>contato@vitta.com.br</p>
-              <p>(11) 98765-4321</p>
+            <h4 className="font-display text-lg tracking-wide">Atendimento</h4>
+            <ul className="mt-3 space-y-2 text-sm text-primary-foreground/70">
+              <li>contato@agon.com.br</li>
+              <li>(11) 99999-0000</li>
+              <li>Seg a Sex, 9h às 18h</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-display text-lg tracking-wide">Redes Sociais</h4>
+            <div className="mt-3 flex gap-4">
+              <Link href="#" className="text-primary-foreground/70 transition-colors hover:text-secondary">
+                <Instagram className="h-6 w-6" />
+              </Link>
+              <Link href="#" className="text-primary-foreground/70 transition-colors hover:text-secondary">
+                <Facebook className="h-6 w-6" />
+              </Link>
+              <Link href="#" className="text-primary-foreground/70 transition-colors hover:text-secondary">
+                <Twitter className="h-6 w-6" />
+              </Link>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-primary-foreground/10 text-center">
-          <p className="font-sans text-xs text-primary-foreground/40">
-            © {currentYear} Vitta. Todos os direitos reservados.
-          </p>
+        <div className="mt-12 border-t border-primary-foreground/20 pt-6 text-center text-sm text-primary-foreground/50">
+          © 2026 Agon. Todos os direitos reservados.
         </div>
       </div>
     </footer>

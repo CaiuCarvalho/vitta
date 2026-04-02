@@ -3,6 +3,11 @@ import productRoutes from "./product.routes";
 import orderRoutes from "./order.routes";
 import categoryRoutes from "./category.routes";
 import userRoutes from "./user.routes";
+import authRoutes from "./auth.routes";
+import paymentRoutes from "./payment.routes";
+import webhookRoutes from "./webhook.routes";
+import wishlistRoutes from "./wishlist.routes";
+import adminRoutes from "./admin.routes";
 
 const router = Router();
 
@@ -17,15 +22,10 @@ router.use("/api/products", productRoutes);
 router.use("/api/orders", orderRoutes);
 router.use("/api/categories", categoryRoutes);
 router.use("/api/users", userRoutes);
-
-// Auth placeholders
-router.post("/api/auth/login", (_req, res) => {
-  res.json({ message: "Auth login — coming soon" });
-});
-
-router.post("/api/auth/register", (_req, res) => {
-  res.json({ message: "Auth register — coming soon" });
-});
+router.use("/api/auth", authRoutes);
+router.use("/api/payment", paymentRoutes);
+router.use("/api/webhooks", webhookRoutes);
+router.use("/api/wishlist", wishlistRoutes);
+router.use("/api/admin", adminRoutes);
 
 export default router;
-

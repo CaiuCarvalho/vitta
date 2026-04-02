@@ -1,0 +1,29 @@
+name: "PR References Aligner"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  references_check:
+    name: "Agon Architecture Rules Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ### 🤖 Agon Guard Bot: Architecture Validation
+            
+            Welcome to the Request Context! Before a maintainer reviews this logic, please confirm that you have strictly adhered to the architecture foundations located in our [/references](/references) directory.
+            
+            **Checklist Requerida (`claude.md`)**:
+            - 🔒 **SOC Garantido**: O frontend nunca engaja transações diretamente em base de dados e não possui `Mappers` fora dos controllers? ([architecture.md])
+            - 🔒 **Padrão Estético Elite**: Interfaces mantêm coerência com os estilos base (HSL Variables) e o tema obscuro/premium da grife? ([design-system.md])
+            - 🔒 **Env Validation**: Novas integrações preveem schema de validação nas variáveis secretas para não subirmos sem as restrições?
+            
+            Se houveram violações, por favor aplique e reenvie no histórico. Lembre-se, Quality Gates não toleram avisos!
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

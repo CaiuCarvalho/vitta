@@ -3,10 +3,14 @@ import { CategoryService } from "../services/category.service";
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/AppError";
 
+const MAX_PAGE_LIMIT = 100;
+
 export class CategoryController {
-  static getCategories = catchAsync(async (_req: Request, res: Response) => {
-    const categories = await CategoryService.getAllCategories();
-    res.status(200).json({ data: categories });
+  static getCategories = catchAsync(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, MAX_PAGE_LIMIT);
+    const result = await CategoryService.getAllCategories(page, limit);
+    res.status(200).json({ data: result });
   });
 
   static getCategoryById = catchAsync(async (req: Request, res: Response) => {
@@ -35,7 +39,9 @@ export class CategoryController {
   });
 
   static updateCategory = catchAsync(async (req: Request, res: Response) => {
-    const category = await CategoryService.updateCategory(req.params.id, req.body);
+    // Whitelist allowed fields
+    const { name, slug, description } = req.body;
+    const category = await CategoryService.updateCategory(req.params.id, { name, slug, description });
     res.status(200).json({ data: category });
   });
 
@@ -44,4 +50,3 @@ export class CategoryController {
     res.status(204).send();
   });
 }
-

@@ -39,7 +39,7 @@ export function useCart(): CartContextValue {
 // Provider
 // ============================================================
 
-const STORAGE_KEY = "vitta-cart";
+const STORAGE_KEY = "agon-cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);

@@ -1,16 +1,20 @@
-import Link from "next/link";
+"use client";
+import Link, { LinkProps } from "next/link";
+import { usePathname } from "next/navigation";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-interface NavLinkCompatProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  href: string;
+interface NavLinkCompatProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href">, LinkProps {
+  className?: string;
   activeClassName?: string;
   pendingClassName?: string;
-  isActive?: boolean;
 }
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
-  ({ className, activeClassName, href, isActive, ...props }, ref) => {
+  ({ className, activeClassName, pendingClassName, href, ...props }, ref) => {
+    const pathname = usePathname();
+    const isActive = pathname === href || pathname?.startsWith(href as string);
+
     return (
       <Link
         ref={ref}

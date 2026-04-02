@@ -1,18 +1,20 @@
-export const dynamic = 'force-dynamic';
-
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
-import Background from "@/components/Background";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
+import { AuthProvider } from "@/context/AuthContext";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vitta — Cuidados Capilares Premium",
-  description:
-    "Fórmulas exclusivas que transformam cada fio. Cuidados capilares de luxo para quem valoriza a beleza autêntica.",
-  keywords: ["cabelos", "cuidados capilares", "premium", "vitta", "sérum", "máscara capilar"],
-  authors: [{ name: "Vitta" }],
+  title: "Agon — A Loja do Torcedor",
+  description: "A melhor loja de produtos temáticos da Seleção Brasileira e artigos de futebol.",
+  keywords: ["futebol", "brasil", "copa do mundo", "camisa", "seleção"],
+  authors: [{ name: "Agon" }],
 };
 
 export default function RootLayout({
@@ -22,13 +24,39 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen font-sans antialiased text-foreground">
-        <CartProvider>
-          <Background />
-          {children}
-          <Toaster />
-          <Sonner />
-        </CartProvider>
+      <head>
+        <Script
+          id="gtm-script"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','GTM-MCVPTPL3');`
+          }}
+        />
+      </head>
+      <body className="font-body antialiased text-foreground bg-background">
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MCVPTPL3" height="0" width="0" style="display:none;visibility:hidden"></iframe>`
+          }}
+        />
+        <AuthProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <GoogleAnalytics />
+              <Navbar />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <Footer />
+              <Toaster />
+              <Sonner />
+            </CartProvider>
+          </WishlistProvider>
+        </AuthProvider>
       </body>
     </html>
   );

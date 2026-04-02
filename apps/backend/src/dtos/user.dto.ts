@@ -7,4 +7,10 @@ export interface CreateUserDTO {
 export interface UpdateUserDTO {
   name?: string;
   email?: string;
+  password_hash?: string;
+}
+
+export interface LoginDTO {
+  email: string;
+  password: string;
 }

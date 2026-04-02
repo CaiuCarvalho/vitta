@@ -33,3 +33,32 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Sensitive — Google Service Account & session files
+credentials.json
+shopee_session.json
+import_results.csv
+tmp_images/
+reset-password.js
+*.sql
+*.pem
+*.key
+*.db
+
+# Tool Artifacts
+.playwright/
+.playwright-cli/
+test-results/
+playwright-report/
+
+# Temporary
+tmp/
+temp/
+*_lint.txt
+*.tmp
+
+# Internal Documentation
+docs/
+
+# claude  
+.claude/
