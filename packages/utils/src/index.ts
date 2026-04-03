@@ -69,7 +69,7 @@ export function calculateShipping(zipCode: string, subtotal: number): number {
   return 27.90;
 }
 
-export * from "./validation";
+export * from "./validation.js";
 
 /* --- Shared Domain Interfaces --- */
 
