@@ -6,15 +6,15 @@ import { ArrowRight, Play } from "lucide-react";
 export default function Hero() {
   return (
     <section className="relative w-full h-screen min-h-[700px] flex items-center overflow-hidden bg-black">
-      
+
       {/* Imagem de Fundo de Alto Impacto */}
-      <div 
+      <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat scale-105 animate-slow-zoom"
         style={{
           backgroundImage: "url('https://stcbfsiteprdimgbrs.blob.core.windows.net/img-site/cdn/54298352151_7c2fffd8cc_k.jpg')",
         }}
       />
-      
+
       {/* Overlays Estilo Nike/CBF */}
       <div className="absolute inset-0 z-10 bg-gradient-to-r from-background via-background/40 to-transparent" />
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
@@ -22,7 +22,7 @@ export default function Hero() {
 
       {/* Conteúdo Centralizado à Esquerda (Estilo Nike) */}
       <div className="relative z-20 w-full container mx-auto px-6 md:px-12 flex flex-col items-start pt-20">
-        
+
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -55,7 +55,7 @@ export default function Hero() {
               </span>
               <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </Link>
-            
+
             <button className="flex items-center gap-4 text-foreground/70 hover:text-primary transition-all group font-bold uppercase tracking-widest text-xs">
               <div className="h-12 w-12 rounded-full border border-foreground/20 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-all">
                 <Play className="h-5 w-5 fill-current" />

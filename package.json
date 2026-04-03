@@ -5,10 +5,7 @@
   "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "services/*",
-    "jobs/*",
-    "models/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "turbo run build",

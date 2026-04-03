@@ -10,16 +10,21 @@ import Testimonials from "@/components/Testimonials";
 import { Truck, ShieldCheck, RefreshCcw, Zap, Star, Users } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
-import jerseyImg from "@/assets/product-jersey.jpg";
-import scarfImg from "@/assets/product-scarf.jpg";
-import shortsImg from "@/assets/product-shorts.jpg";
-import ballImg from "@/assets/product-ball.jpg";
+// Imagens migradas para /public/images/
+const images = {
+  jersey: "/images/products/product-jersey.jpg",
+  scarf: "/images/products/product-scarf.jpg",
+  shorts: "/images/products/product-shorts.jpg",
+  ball: "/images/products/product-ball.jpg",
+  structure: "/images/ui/structure_of_a_champion.png",
+  pele: "/images/history/pele_celebration.png",
+};
 
 const featuredProducts = [
-  { id: "1", image: jerseyImg.src, title: "Manto Titular 24/25 I", price: 349.90, badge: "Lançamento", category: "Match Jersey" },
-  { id: "2", image: scarfImg.src, title: "Jaqueta Anthem Brasil", price: 499.90, category: "Lifestyle" },
-  { id: "3", image: shortsImg.src, title: "Shorts Oficial Strike", price: 199.90, category: "Treino" },
-  { id: "4", image: ballImg.src, title: "Bola Profissional CBF", price: 149.90, badge: "Exclusivo", category: "Equipamentos" },
+  { id: "1", image: images.jersey, title: "Manto Titular 24/25 I", price: 349.90, badge: "Lançamento", category: "Match Jersey" },
+  { id: "2", image: images.scarf, title: "Jaqueta Anthem Brasil", price: 499.90, category: "Lifestyle" },
+  { id: "3", image: images.shorts, title: "Shorts Oficial Strike", price: 199.90, category: "Treino" },
+  { id: "4", image: images.ball, title: "Bola Profissional CBF", price: 149.90, badge: "Exclusivo", category: "Equipamentos" },
 ];
 
 export default function Home() {
@@ -84,7 +89,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative group overflow-hidden rounded-[2rem]">
               <Image
-                src="https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188055/np96yrnp6qnbiqeb43or.jpg"
+                src={images.structure}
                 alt="Elite Trophy"
                 fill
                 className="object-cover scale-105 group-hover:scale-110 transition-transform duration-700"
@@ -126,7 +131,7 @@ export default function Home() {
         >
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: "url('https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188093/xcgys1smzcntvveu15hgr.jpg')" }}
+            style={{ backgroundImage: `url(${images.pele})` }}
           />
         </motion.div>
 

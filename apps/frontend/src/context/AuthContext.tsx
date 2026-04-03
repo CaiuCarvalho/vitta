@@ -92,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               clearAuth();
             } else {
               const userData = JSON.parse(storedUser);
-              console.log("[Auth] Session recovered for:", userData.email);
               setToken(storedToken);
               setUser(userData);
               
@@ -101,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else {
-            console.log("[Auth] No session found");
+            // Sessão não encontrada
           }
         }
       } catch (error) {
@@ -116,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearAuth]);
 
   const login = useCallback((userData: UserAuth, jwtToken: string) => {
-    console.log("[Auth] Performing login for:", userData.email);
+    // login iniciado
     if (typeof window !== "undefined") {
       Cookies.set(AUTH_COOKIE_NAME, jwtToken, { expires: 7, path: "/" });
       localStorage.setItem(AUTH_COOKIE_NAME, jwtToken);
