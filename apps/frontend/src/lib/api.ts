@@ -1,9 +1,9 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export const api = {
   async fetch(endpoint: string, options: RequestInit = {}) {
     const headers = new Headers(options.headers);
-    
+
     // Configura JSON por padrao a menos que mandem FormData (ex: multipart)
     if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
