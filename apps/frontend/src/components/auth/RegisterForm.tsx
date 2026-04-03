@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 const registerSchema = z
   .object({
@@ -44,31 +45,22 @@ export function RegisterForm({ onToggleToLogin }: RegisterFormProps) {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
+
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        }),
+      const { data: result } = await api.post("/api/auth/register", {
+        name: data.name,
+        email: data.email,
+        password: data.password,
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Não foi possível criar a conta.");
-      }
 
       toast.success("Bem-vindo à Torcida Agon! Aproveite seu manto.");
 
-      if (result.data?.token) {
-        login(result.data.user, result.data.token);
+      if (result?.token) {
+        login(result.user, result.token);
       } else {
         setTimeout(onToggleToLogin, 1500);
       }
+
     } catch (error: any) {
       toast.error(error.message || "Erro de conexão com o servidor.");
     } finally {
