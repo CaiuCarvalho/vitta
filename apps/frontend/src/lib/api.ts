@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = {
   async fetch(endpoint: string, options: RequestInit = {}) {
