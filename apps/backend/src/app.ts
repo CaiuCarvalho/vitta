@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import router from "./routes";
+import router from "./routes/index";
 import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();

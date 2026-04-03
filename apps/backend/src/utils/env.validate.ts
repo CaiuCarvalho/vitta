@@ -3,8 +3,8 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.string().default("3001"),
   JWT_SECRET: z.string().min(10, "JWT_SECRET deve ter no mínimo 10 caracteres."),
-  ABACATE_PAY_API_KEY: z.string().min(5, "ABACATE_PAY_API_KEY deve estar definido"),
-  ABACATE_WEBHOOK_SECRET: z.string().min(5, "ABACATE_WEBHOOK_SECRET deve estar definido"),
+  ABACATE_PAY_API_KEY: z.string().min(5, "ABACATE_PAY_API_KEY deve estar definido").optional(),
+  ABACATE_WEBHOOK_SECRET: z.string().min(5, "ABACATE_WEBHOOK_SECRET deve estar definido").optional(),
   DATABASE_URL: z.string().url("DATABASE_URL deve ser uma URL válida"),
   RESEND_API_KEY: z.string().min(5, "RESEND_API_KEY deve estar definido"),
   EMAIL_FROM: z.string().email("EMAIL_FROM deve ser um e-mail válido"),

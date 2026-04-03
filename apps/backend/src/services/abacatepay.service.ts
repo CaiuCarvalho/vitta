@@ -4,9 +4,7 @@ import logger from "../utils/logger";
 
 const ABACATE_PAY_API_KEY = process.env.ABACATE_PAY_API_KEY;
 if (!ABACATE_PAY_API_KEY) {
-  throw new Error(
-    "FATAL: ABACATE_PAY_API_KEY environment variable is not set. Abacate Pay service cannot initialize."
-  );
+  logger.warn("ABACATE_PAY_API_KEY is not set. Abacate Pay service will fail during checkout. (Mercado Pago migration in progress)");
 }
 
 const BASE_URL = "https://api.abacatepay.com/v1";
