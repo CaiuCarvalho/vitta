@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import React from "react";
+
 import { WelcomeEmail } from "../templates/emails/welcomeEmail";
 import { OrderConfirmationEmail } from "../templates/emails/orderConfirmationEmail";
 import { PasswordChangeEmail } from "../templates/emails/passwordChangeEmail";
@@ -7,12 +8,24 @@ import { TrackingCodeEmail } from "../templates/emails/trackingCodeEmail";
 import { VerificationEmail } from "../templates/emails/verificationEmail";
 import { PasswordResetEmail } from "../templates/emails/passwordResetEmail";
 
+/**
+ * 🔐 Configuração segura do Resend
+ */
 const resendAPIKey = process.env.RESEND_API_KEY;
+
 if (!resendAPIKey) {
-  throw new Error("FATAL: RESEND_API_KEY environment variable is not set. Email service cannot initialize.");
+  console.warn("⚠️ RESEND_API_KEY não configurada. Emails desativados.");
 }
-const resend = new Resend(resendAPIKey);
-const defaultFrom = process.env.EMAIL_FROM || "contato@agonimports.com";
+
+const resend = resendAPIKey ? new Resend(resendAPIKey) : null;
+
+/**
+ * 📧 Email padrão (seguro para dev)
+ */
+const defaultFrom =
+  process.env.EMAIL_FROM && process.env.EMAIL_FROM.length > 0
+    ? process.env.EMAIL_FROM
+    : "onboarding@resend.dev";
 
 export interface SendEmailParams {
   to: string | string[];
@@ -22,11 +35,16 @@ export interface SendEmailParams {
 
 export class EmailService {
   /**
-   * Função base genérica de envio de email.
+   * 📤 Função base genérica de envio de email
    */
   static async sendEmail({ to, subject, react }: SendEmailParams) {
     try {
-      // A verificação já é feita na inicialização acima
+      if (!resend) {
+        console.warn(
+          "⚠️ EmailService chamado sem configuração do Resend. Email não enviado."
+        );
+        return null;
+      }
 
       const { data, error } = await resend.emails.send({
         from: defaultFrom,
@@ -41,14 +59,18 @@ export class EmailService {
 
       return data;
     } catch (err: any) {
-      console.error(`Failed to send email to ${to}:`, err.message);
-      // Não quebramos a execução do backend caso o email falhe apenas (graceful degradation)
+      console.error(`❌ Failed to send email to ${to}:`, err.message);
+
+      /**
+       * ❗ IMPORTANTE:
+       * Nunca quebrar o fluxo do backend por falha de email
+       */
       return null;
     }
   }
 
   /**
-   * Envia email de boas vindas para um novo usuário.
+   * 🎉 Email de boas-vindas
    */
   static async sendWelcomeEmail(to: string, name: string) {
     const component = React.createElement(WelcomeEmail, { name });
@@ -61,10 +83,19 @@ export class EmailService {
   }
 
   /**
-   * Envia email de confirmação de pedido para o comprador.
+   * 🧾 Confirmação de pedido
    */
-  static async sendOrderConfirmationEmail(to: string, name: string, orderId: string, total: number) {
-    const component = React.createElement(OrderConfirmationEmail, { name, orderId, total });
+  static async sendOrderConfirmationEmail(
+    to: string,
+    name: string,
+    orderId: string,
+    total: number
+  ) {
+    const component = React.createElement(OrderConfirmationEmail, {
+      name,
+      orderId,
+      total,
+    });
 
     return this.sendEmail({
       to,
@@ -74,7 +105,7 @@ export class EmailService {
   }
 
   /**
-   * Envia email de aviso de alteração de senha.
+   * 🔐 Aviso de alteração de senha
    */
   static async sendPasswordChangeEmail(to: string, name: string) {
     const component = React.createElement(PasswordChangeEmail, { name });
@@ -87,10 +118,19 @@ export class EmailService {
   }
 
   /**
-   * Envia email com código de rastreio de um pedido enviado.
+   * 📦 Código de rastreio
    */
-  static async sendTrackingCodeEmail(to: string, name: string, orderId: string, trackingCode: string) {
-    const component = React.createElement(TrackingCodeEmail, { name, orderId, trackingCode });
+  static async sendTrackingCodeEmail(
+    to: string,
+    name: string,
+    orderId: string,
+    trackingCode: string
+  ) {
+    const component = React.createElement(TrackingCodeEmail, {
+      name,
+      orderId,
+      trackingCode,
+    });
 
     return this.sendEmail({
       to,
@@ -100,10 +140,19 @@ export class EmailService {
   }
 
   /**
-   * Envia email com código de verificação para alteração de dados sensíveis.
+   * 🔎 Código de verificação (email ou CPF)
    */
-  static async sendUpdateVerificationEmail(to: string, name: string, code: string, type: 'EMAIL_UPDATE' | 'TAXID_UPDATE') {
-    const component = React.createElement(VerificationEmail, { name, code, type });
+  static async sendUpdateVerificationEmail(
+    to: string,
+    name: string,
+    code: string,
+    type: "EMAIL_UPDATE" | "TAXID_UPDATE"
+  ) {
+    const component = React.createElement(VerificationEmail, {
+      name,
+      code,
+      type,
+    });
 
     const subjectPrefix = type === "EMAIL_UPDATE" ? "E-mail" : "CPF";
 
@@ -115,10 +164,17 @@ export class EmailService {
   }
 
   /**
-   * Envia email com código de recuperação de senha.
+   * 🔑 Recuperação de senha
    */
-  static async sendPasswordResetEmail(to: string, name: string, code: string) {
-    const component = React.createElement(PasswordResetEmail, { name, code });
+  static async sendPasswordResetEmail(
+    to: string,
+    name: string,
+    code: string
+  ) {
+    const component = React.createElement(PasswordResetEmail, {
+      name,
+      code,
+    });
 
     return this.sendEmail({
       to,

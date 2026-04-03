@@ -26,7 +26,7 @@ export default defineConfig({
     },
     {
       command: 'npm run dev --workspace=backend',
-      url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+      url: process.env.NEXT_PUBLIC_API_URL,
       reuseExistingServer: !process.env.CI,
     }
   ],
