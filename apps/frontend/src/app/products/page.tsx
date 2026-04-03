@@ -2,6 +2,7 @@ import ProductCard from "@/components/ProductCard";
 import SearchFilters from "@/components/products/SearchFilters";
 import AnimatedGrid from "@/components/products/AnimatedGrid";
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Arsenal | Agon",
@@ -51,7 +52,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: any
           Explore a linha exclusiva de equipamentos projetados para elite da performance. A armadura oficial da paixão nacional.
         </p>
 
-        <SearchFilters categories={categories} />
+        <Suspense fallback={<div className="h-16 animate-pulse bg-card/10 rounded-full" />}>
+          <SearchFilters categories={categories} />
+        </Suspense>
       </div>
       
       {products.length === 0 ? (
