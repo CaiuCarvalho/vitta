@@ -6,6 +6,32 @@ import { UserService } from "./user.service";
 import { validateTaxId, calculateShipping, CheckoutPayload } from "@vitta/utils";
 import logger from "../utils/logger";
 
+// Item 3: Limites de quantidade por item
+const MAX_QUANTITY_PER_ITEM = 100;
+
+// Item 9: FRONTEND_URL obrigatória — sem fallback hardcoded
+function getFrontendUrl(): string {
+  const url = process.env.FRONTEND_URL;
+  if (!url) {
+    throw new AppError(
+      "Configuração de servidor incompleta: FRONTEND_URL não definida.",
+      500
+    );
+  }
+  return url;
+}
+
+// Item 10: Validação de formato de CEP brasileiro (8 dígitos numéricos)
+function validateZipCode(zipCode: string): void {
+  const cleaned = zipCode.replace(/\D/g, "");
+  if (cleaned.length !== 8) {
+    throw new AppError(
+      "CEP inválido. Informe um CEP com 8 dígitos numéricos.",
+      400
+    );
+  }
+}
+
 /**
  * PaymentService: Orquestrador do fluxo de Checkout (Brasil Fanfare)
  * Centraliza a lógica de negócio, segurança e integrações de pagamento.
@@ -24,19 +50,37 @@ export class PaymentService {
       throw new AppError("O carrinho está vazio. Adicione itens antes de finalizar.", 400);
     }
 
+    // Item 3: Validar quantidade de cada item ( > 0 e ≤ MAX)
+    for (const item of items) {
+      if (!item.quantity || item.quantity <= 0) {
+        throw new AppError(
+          `Quantidade inválida para o produto ${item.productId}. Deve ser maior que zero.`,
+          400
+        );
+      }
+      if (item.quantity > MAX_QUANTITY_PER_ITEM) {
+        throw new AppError(
+          `Quantidade máxima por item é ${MAX_QUANTITY_PER_ITEM}. Produto ${item.productId} excede o limite.`,
+          400
+        );
+      }
+    }
+
     // 2. Buscar Dados do Usuário com Relações
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        addresses: { orderBy: { createdAt: "desc" } }
-      }
+        addresses: { orderBy: { createdAt: "desc" } },
+      },
     });
     if (!user) throw new AppError("Usuário não encontrado", 404);
 
     // 3. Gerenciamento de Endereço e Cálculo de Frete
     let shippingAddress = null;
-    
+
     if (newAddress) {
+      // Item 10: Validar formato do CEP antes de qualquer processamento
+      validateZipCode(newAddress.zipCode);
       logger.info(`Cadastrando novo endereço para usuário [${userId}]`);
       shippingAddress = await UserService.addAddress(userId, {
         zipCode: newAddress.zipCode,
@@ -46,7 +90,7 @@ export class PaymentService {
         neighborhood: newAddress.neighborhood,
         city: newAddress.city,
         state: newAddress.state,
-        isDefault: true
+        isDefault: true,
       });
     } else if (addressId) {
       shippingAddress = user.addresses.find((a) => a.id === addressId);
@@ -58,17 +102,32 @@ export class PaymentService {
       throw new AppError("Endereço de entrega é obrigatório para calcular o frete.", 400);
     }
 
+    // Item 10: Validar CEP do endereço existente também
+    validateZipCode(shippingAddress.zipCode);
+
     // 4. Validação de Produtos e Recálculo de Subtotal (Backend-side)
     logger.debug(`Validando ${items.length} itens do carrinho...`);
-    const productIds = items.map(i => i.productId);
+    const productIds = items.map((i) => i.productId);
     const dbProducts = await prisma.product.findMany({
-      where: { id: { in: productIds } }
+      where: { id: { in: productIds } },
     });
+
+    // Item 18: Otimizar lookup de produto com Map O(1) em vez de .find() O(n)
+    const productMap = new Map(dbProducts.map((p) => [p.id, p]));
 
     let subtotal = 0;
     const validatedItems = items.map((item) => {
-      const p = dbProducts.find((dbP) => dbP.id === item.productId);
+      const p = productMap.get(item.productId);
       if (!p) throw new AppError(`Produto ${item.productId} não encontrado`, 404);
+
+      // Item 4: Validar estoque disponível antes de continuar
+      if (p.stock < item.quantity) {
+        throw new AppError(
+          `Estoque insuficiente para "${p.name}". Disponível: ${p.stock}, solicitado: ${item.quantity}.`,
+          400
+        );
+      }
+
       subtotal += p.price * item.quantity;
       return { ...item, unitPrice: p.price };
     });
@@ -92,7 +151,7 @@ export class PaymentService {
     }
 
     if (Object.keys(updates).length > 0) {
-      logger.info(`Atualizando perfil do usuário [${userId}]: %o`, updates);
+      logger.info(`Atualizando perfil do usuário [${userId}]`);
       await UserService.updateProfile(userId, updates);
     }
 
@@ -101,16 +160,17 @@ export class PaymentService {
     if (!finalPhone) throw new AppError("Telefone é obrigatório para processar o pagamento.", 400);
 
     // 8. Criação da Order
-    const order = await OrderService.createOrder({ 
-        userId, 
-        items: validatedItems,
-        shippingCost 
+    const order = await OrderService.createOrder({
+      userId,
+      items: validatedItems,
+      shippingCost,
     });
     logger.info(`Order [${order.id}] criada com sucesso.`);
 
     // 9. Integração com Abacate Pay
+    // Item 18: Reutilizar productMap já construído
     const abacateProducts = validatedItems.map((item) => {
-      const p = dbProducts.find(dbP => dbP.id === item.productId)!;
+      const p = productMap.get(item.productId)!;
       return {
         externalId: item.productId,
         name: p.name,
@@ -129,11 +189,14 @@ export class PaymentService {
     }
 
     try {
+      // Item 9: FRONTEND_URL obrigatória — lança erro se não configurada
+      const frontendUrl = getFrontendUrl();
+
       const billing = await AbacatePayService.createBilling({
         frequency: "ONE_TIME",
         methods: [paymentMethod === "CARD" ? "CARD" : "PIX"],
-        returnUrl: `${process.env.FRONTEND_URL || "https://agonimports.com"}/carrinho`,
-        completionUrl: `${process.env.FRONTEND_URL || "https://agonimports.com"}/pedido/confirmado?orderId=${order.id}`,
+        returnUrl: `${frontendUrl}/carrinho`,
+        completionUrl: `${frontendUrl}/pedido/confirmado?orderId=${order.id}`,
         customer: {
           name: user.name,
           email: user.email,

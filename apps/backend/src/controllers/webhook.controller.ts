@@ -14,8 +14,13 @@ export class WebhookController {
                      || req.headers["authorization"]?.replace("Bearer ", "") 
                      || "";
       
-      // 2. Coleta do payload bruto (Fallback seguro via proxy object)
-      const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+      // 2. Coleta do payload bruto (Item 17: SEM fallback JSON.stringify — re-serializar gera hash diferente)
+      const rawBody = (req as any).rawBody;
+      if (!rawBody) {
+        logger.error("[WEBHOOK] rawBody ausente — configure express.raw() ou middleware de captura de buffer.");
+        res.status(400).json({ error: "Missing raw body for HMAC verification" });
+        return;
+      }
 
       // 3. Validação HMAC rigorosa
       if (!WebhookService.verifyAbacateSignature(rawBody, signature)) {

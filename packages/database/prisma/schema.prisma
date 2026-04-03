@@ -22,6 +22,7 @@ model User {
   orders             Order[]
   verificationTokens VerificationToken[]
   wishlistItems      WishlistItem[]
+  tokenVersion       Int                 @default(0) @map("token_version")
 
   @@map("users")
 }

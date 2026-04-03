@@ -6,6 +6,7 @@ import { EmailService } from "./email.service";
 import { VerificationService } from "./verification.service";
 import { UserMapper } from "../dtos/user.mapper";
 import { UserProfile } from "@vitta/utils";
+import logger from "../utils/logger";
 
 export interface PaginatedUsers {
   users: UserProfile[];
@@ -130,7 +131,8 @@ export class UserService {
     try {
       await EmailService.sendPasswordChangeEmail(updatedUser.email, updatedUser.name);
     } catch (err) {
-      console.warn(`[UserService] Falha ao enviar email de troca de senha para ${updatedUser.email}`);
+      // Item 16: console.warn → logger.warn
+      logger.warn("[UserService] Falha ao enviar email de troca de senha (não crítico).", { error: err instanceof Error ? err.message : err });
     }
 
     return UserMapper.toPublicDTO(updatedUser);

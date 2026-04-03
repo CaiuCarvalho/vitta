@@ -19,37 +19,56 @@ export interface AbacateEvent {
 export class WebhookService {
   /**
    * Valida a assinatura HMAC de webhooks (Abacate Pay).
+   * Item 1: Secret OBRIGATÓRIO — sem fallback inseguro.
+   * Item 2: Comparação timing-safe via crypto.timingSafeEqual.
+   * Item 17: rawBody deve ser string pura (não re-serializada).
    */
   static verifyAbacateSignature(rawBody: string, signature: string): boolean {
     const secret = process.env.ABACATE_WEBHOOK_SECRET;
-    
-    // Se não há secret definido, alertamos que está desprotegido, 
-    // ideal para evitar crashes em debug, mas que atenda em produção.
+
+    // Item 1 — CRÍTICO: nunca executar sem secret. Lançar erro fatal em boot se ausente.
     if (!secret) {
-      logger.warn("ABACATE_WEBHOOK_SECRET ausente. Executando em ambiente inseguro (Fallback).");
-      return true;
+      logger.error("FATAL: ABACATE_WEBHOOK_SECRET não definido. Webhook endpoint inoperável.");
+      return false; // Rejeitar sempre — nunca aprovar sem secret configurado
     }
 
-    if (!signature) return false;
+    // Item 17: rawBody DEVE ser string original do buffer, nunca re-serializada via JSON.stringify
+    if (!signature || typeof rawBody !== "string" || rawBody.length === 0) {
+      return false;
+    }
 
     try {
-      const hash = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-      // Prevenir timing attacks se possível, caso contrário comparacao direta
-      return hash === signature;
-    } catch (err) {
+      const expectedHash = crypto
+        .createHmac("sha256", secret)
+        .update(rawBody, "utf8")
+        .digest("hex");
+
+      const expectedBuffer = Buffer.from(expectedHash, "hex");
+      const receivedBuffer = Buffer.from(signature, "hex");
+
+      // Item 2: Prevenir timing attacks com comparação em tempo constante
+      if (expectedBuffer.length !== receivedBuffer.length) {
+        return false;
+      }
+
+      return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+    } catch {
       return false;
     }
   }
 
   /**
-   * Processa o evento de alteração de Billing do Gateway
+   * Processa o evento de alteração de Billing do Gateway.
+   * Item 8: Log reduzido — sem payload completo para não vazar dados sensíveis.
+   * Item 19: Idempotência garantida pela verificação de status antes de mudar estado.
    */
   static async processAbacateEvent(event: AbacateEvent) {
-    logger.info(`[WEBHOOK] Processando Evento Abacate Pay: ${JSON.stringify(event, null, 2)}`);
-
+    // Item 8: Log mínimo — apenas tipo e ID do evento, sem payload completo
     const eventType = event.event ?? event.type ?? "";
     const billingData = event.data ?? event;
     const billingId = billingData.id ?? "";
+
+    logger.info(`[WEBHOOK] Evento recebido | type=${eventType} | billingId=${billingId}`);
 
     if (!billingId) {
       logger.warn("[WEBHOOK] Billing ID ausente no payload. Ignorando.");
@@ -65,28 +84,32 @@ export class WebhookService {
         const order = await OrderService.findByAbacateBillingId(billingId);
 
         if (!order) {
-          logger.warn(`[WEBHOOK] Pedido não encontrado para billingId: ${billingId}`);
+          logger.warn(`[WEBHOOK] Pedido não encontrado para billingId=${billingId}`);
           return;
         }
 
-        if (order.status !== "PAID") {
-            await OrderService.updateOrderStatus(order.id, "PAID");
-            await OrderService.decrementStock(order.id);
-            logger.info(`[WEBHOOK] Pedido ${order.id} marcado como PAID e estoque baixado.`);
+        // Item 19: Idempotência explícita — só processa se ainda não estiver PAID
+        if (order.status === "PAID") {
+          logger.info(`[WEBHOOK] Pedido ${order.id} já está PAID. Ignorando evento duplicado.`);
+          return;
+        }
 
-            try {
-              const user = (order as any).user as { name: string; email: string };
-              await EmailService.sendOrderConfirmationEmail(
-                user.email,
-                user.name,
-                order.id,
-                order.total
-              );
-              logger.info(`[WEBHOOK] Email de confirmação enviado para ${user.email}`);
-            } catch (emailErr) {
-              const msg = emailErr instanceof Error ? emailErr.message : "Erro desconhecido";
-              logger.warn(`[WEBHOOK] Falha ao enviar email (não crítico): ${msg}`);
-            }
+        await OrderService.updateOrderStatus(order.id, "PAID");
+        await OrderService.decrementStock(order.id);
+        logger.info(`[WEBHOOK] Pedido ${order.id} marcado como PAID e estoque baixado.`);
+
+        try {
+          const user = (order as any).user as { name: string; email: string };
+          await EmailService.sendOrderConfirmationEmail(
+            user.email,
+            user.name,
+            order.id,
+            order.total
+          );
+          logger.info(`[WEBHOOK] Email de confirmação enviado com sucesso.`);
+        } catch (emailErr) {
+          const msg = emailErr instanceof Error ? emailErr.message : "Erro desconhecido";
+          logger.warn(`[WEBHOOK] Falha ao enviar email (não crítico): ${msg}`);
         }
       } else if (
         eventType === "billing.expired" ||
@@ -94,6 +117,7 @@ export class WebhookService {
         billingData.status === "EXPIRED"
       ) {
         const order = await OrderService.findByAbacateBillingId(billingId);
+        // Item 19: Idempotência — só altera se ainda PENDING
         if (order && order.status === "PENDING") {
           await OrderService.updateOrderStatus(order.id, "FAILED");
           logger.info(`[WEBHOOK] Pedido ${order.id} marcado como FAILED.`);
