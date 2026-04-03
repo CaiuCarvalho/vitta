@@ -84,7 +84,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative group overflow-hidden rounded-[2rem]">
               <Image
-                src="https://i.pinimg.com/1200x/65/93/e1/6593e19022cb6c599d0d39cf2fa74506.jpg"
+                src="https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188055/np96yrnp6qnbiqeb43or.jpg"
                 alt="Elite Trophy"
                 fill
                 className="object-cover scale-105 group-hover:scale-110 transition-transform duration-700"
@@ -126,7 +126,7 @@ export default function Home() {
         >
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: "url('https://scontent-gru2-1.cdninstagram.com/v/t51.71878-15/652634203_954281457556619_4047090321882512151_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=109&ig_cache_key=Mzg1NzI1MTE5MjIzMzU1Njg1OQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6InhwaWRzLjY0MHgxMTM2LnNkci5DMyJ9&_nc_ohc=obrT3ngwYcQQ7kNvwHum3rI&_nc_oc=Adovh8nnSxzisWjaeXTqmTlJU-LEadDT-R7UbfRLdBjsptuK9vdHJXO7xhmDy3GNnLMq4fbhzEH41xIL7uXJzy_k&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-gru2-1.cdninstagram.com&_nc_gid=EHMJgr1UZliMRQWpa5H3lg&_nc_ss=7a32e&oh=00_AfyGoZl2qSDlvaSzTvm2bslJ6q_t3srtrPSmA87D6f-zUw&oe=69CD56A2')" }}
+            style={{ backgroundImage: "url('https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188093/xcgys1smzcntvveu15hgr.jpg')" }}
           />
         </motion.div>
 
@@ -152,7 +152,7 @@ export default function Home() {
             <div className="w-full lg:w-1/2 relative group">
               <div className="aspect-[4/3] rounded-3xl overflow-hidden relative shadow-2xl">
                 <Image 
-                  src="https://i.pinimg.com/1200x/75/bf/d3/75bfd3c0ac102129aaaf2b05da2f9d95.jpg" 
+                  src="https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188055/brjlfom8l0fuwbsntx8s.jpg" 
                   alt="Agon Heritage & Community" 
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -214,7 +214,7 @@ export default function Home() {
           <div className="flex items-center gap-10 text-center md:text-left">
             <div className="relative h-28 w-40">
               <Image 
-                src="https://i.pinimg.com/1200x/84/fb/1f/84fb1f25a40b3205474734f2820187c6.jpg" 
+                src="https://res.cloudinary.com/dbcy4h37x/image/upload/v1775188056/ikq1whvviiqvpsoiuxpp.jpg" 
                 className="invert brightness-0 object-contain" 
                 fill
                 alt="2026 Logo" 
