@@ -18,20 +18,20 @@ interface LogoProps {
 export const Logo = ({ className, isClickable = true, useSharedLayout = true }: LogoProps) => {
   const motionProps: any = useSharedLayout
     ? {
-        layoutId: "main-logo",
-        layout: true,
-        transition: {
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-        },
-      }
+      layoutId: "main-logo",
+      layout: true,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+      },
+    }
     : {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: 0.5 },
-      };
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.5 },
+    };
 
   const content = (
     <motion.span

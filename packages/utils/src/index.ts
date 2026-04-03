@@ -54,17 +54,17 @@ export function truncate(text: string, maxLength: number): string {
  */
 export function calculateShipping(zipCode: string, subtotal: number): number {
   if (subtotal >= 170) return 0; // Frete Grátis acima de R$ 170 (Regra Oficial)
-  
+
   const cleanZip = zipCode.replace(/\D/g, "");
   if (cleanZip.length < 2) return 27.90; // Fallback para CEP inválido
 
   const prefix = parseInt(cleanZip.substring(0, 2));
-  
+
   // Capitais e Regiões Metropolitanas principais (Sudeste)
   if (prefix >= 1 && prefix <= 9) return 11.90; // Grande SP
   if (prefix >= 10 && prefix <= 39) return 19.90; // Interior SP, RJ, MG, ES
   if (prefix >= 80 && prefix <= 89) return 19.90; // PR, SC, RS
-  
+
   // Demais regiões (Norte, Nordeste, Centro-Oeste)
   return 27.90;
 }

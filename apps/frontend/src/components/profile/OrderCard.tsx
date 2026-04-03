@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Package, 
-  ChevronDown, 
-  ChevronUp, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Truck, 
+import {
+  Package,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Truck,
   ExternalLink,
   Receipt
 } from "lucide-react";
@@ -24,39 +24,39 @@ interface OrderCardProps {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning"; icon: any; description: string }> = {
-  PENDING: { 
-    label: "Aguardando Pagamento", 
-    variant: "warning", 
+  PENDING: {
+    label: "Aguardando Pagamento",
+    variant: "warning",
     icon: Clock,
     description: "Seu boleto ou PIX está aguardando compensação."
   },
-  PAID: { 
-    label: "Pagamento Confirmado", 
-    variant: "success", 
+  PAID: {
+    label: "Pagamento Confirmado",
+    variant: "success",
     icon: CheckCircle2,
     description: "Recebemos seu pagamento! Estamos preparando seu manto."
   },
-  FAILED: { 
-    label: "Pagamento Falhou", 
-    variant: "destructive", 
+  FAILED: {
+    label: "Pagamento Falhou",
+    variant: "destructive",
     icon: XCircle,
     description: "Houve um problema com a transação. Tente novamente."
   },
-  SHIPPED: { 
-    label: "Em Trânsito", 
-    variant: "default", 
+  SHIPPED: {
+    label: "Em Trânsito",
+    variant: "default",
     icon: Truck,
     description: "Seu pedido já saiu para entrega!"
   },
-  DELIVERED: { 
-    label: "Entregue", 
-    variant: "secondary", 
+  DELIVERED: {
+    label: "Entregue",
+    variant: "secondary",
     icon: Package,
     description: "O manto já está em suas mãos. Aproveite!"
   },
-  CANCELLED: { 
-    label: "Cancelado", 
-    variant: "outline", 
+  CANCELLED: {
+    label: "Cancelado",
+    variant: "outline",
     icon: XCircle,
     description: "Este pedido foi cancelado."
   },
@@ -71,7 +71,7 @@ export function OrderCard({ order }: OrderCardProps) {
     <Card className={`overflow-hidden border-border/40 transition-all duration-300 ${isExpanded ? "ring-1 ring-primary/30" : "hover:border-primary/30"}`}>
       <CardContent className="p-0">
         {/* Header - Summary */}
-        <div 
+        <div
           className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between cursor-pointer group"
           onClick={() => setIsExpanded(!isExpanded)}
         >

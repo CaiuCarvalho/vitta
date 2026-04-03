@@ -1,12 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { 
-  CheckCircle2, 
-  Copy, 
-  CreditCard, 
-  QrCode, 
-  ChevronRight, 
+import {
+  CheckCircle2,
+  Copy,
+  CreditCard,
+  QrCode,
+  ChevronRight,
   ShoppingBag,
   ExternalLink,
   Clock,
@@ -20,13 +20,13 @@ import { trackPurchase } from "@/lib/analytics";
 function PedidoConfirmadoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const orderId = searchParams.get("orderId");
   const pixQrCode = searchParams.get("pixQrCode");
   const pixCopyPaste = searchParams.get("pixCopyPaste");
   const paymentUrl = searchParams.get("paymentUrl");
   const total = searchParams.get("total");
-  
+
   const [copied, setCopied] = useState(false);
 
   // GA4: purchase — dispara uma única vez ao confirmar o pedido
@@ -42,7 +42,7 @@ function PedidoConfirmadoContent() {
       value: totalValue,
       items: [], // itens já foram enviados em begin_checkout; aqui registramos a transação
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const handleCopy = () => {
@@ -62,9 +62,9 @@ function PedidoConfirmadoContent() {
       </div>
 
       <div className="container mx-auto max-w-2xl text-center relative z-10">
-        
+
         {/* Ícone de Sucesso - Tropéu Agon */}
-        <motion.div 
+        <motion.div
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", damping: 10, stiffness: 100 }}
@@ -80,26 +80,26 @@ function PedidoConfirmadoContent() {
             <span className="text-primary">PEDIDO RECEBIDO</span>
           </h1>
           <div className="flex items-center justify-center gap-4">
-             <span className="h-px w-8 bg-border/40" />
-             <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.4em]">
+            <span className="h-px w-8 bg-border/40" />
+            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.4em]">
               ID: <span className="text-foreground">#{orderId?.split("-")[0].toUpperCase()}</span>
             </p>
-             <span className="h-px w-8 bg-border/40" />
+            <span className="h-px w-8 bg-border/40" />
           </div>
         </header>
 
         <div className="space-y-10 text-left">
-          
+
           {/* Seção de Pagamento PIX */}
           {pixQrCode && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="bg-card/30 backdrop-blur-xl border border-primary/30 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 h-1.5 w-full bg-gradient-to-r from-primary via-secondary to-primary animate-gradient-x" />
-              
+
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -117,7 +117,7 @@ function PedidoConfirmadoContent() {
                 <div className="bg-white p-3 rounded-[2rem] h-56 w-56 flex items-center justify-center shadow-2xl group-hover:scale-[1.02] transition-transform duration-500">
                   <img src={pixQrCode} alt="QR Code Pix" className="h-full w-full" />
                 </div>
-                
+
                 <div className="flex-1 space-y-8 w-full">
                   <div className="space-y-3">
                     <p className="text-[10px] uppercase font-black text-primary tracking-[0.3em] ml-1">Copia e Cola de Elite</p>
@@ -125,7 +125,7 @@ function PedidoConfirmadoContent() {
                       <div className="bg-background/50 border border-border/40 rounded-2xl h-14 px-5 flex items-center overflow-hidden pr-14 text-[10px] font-mono font-bold text-muted-foreground truncate backdrop-blur-sm group-hover/copy:border-primary/50 transition-colors">
                         {pixCopyPaste}
                       </div>
-                      <button 
+                      <button
                         onClick={handleCopy}
                         className="absolute right-1.5 top-1.5 h-11 w-11 flex items-center justify-center bg-primary text-white rounded-xl hover:bg-primary/80 active:scale-90 transition-all shadow-lg"
                       >
@@ -133,7 +133,7 @@ function PedidoConfirmadoContent() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <p className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-4">Vantagens do PIX:</p>
                     <ul className="grid grid-cols-1 gap-3">
@@ -158,7 +158,7 @@ function PedidoConfirmadoContent() {
 
           {/* Seção de Pagamento Cartão/Link */}
           {paymentMethodNotPix() && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -173,7 +173,7 @@ function PedidoConfirmadoContent() {
               <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest leading-relaxed">
                 Quase lá! Para garantir seu Manto Agon, clique no botão seguro abaixo e conclua a transação.
               </p>
-              <a 
+              <a
                 href={paymentUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -190,14 +190,14 @@ function PedidoConfirmadoContent() {
 
           {/* Botões de Ação */}
           <div className="flex flex-col md:flex-row gap-6 pt-10">
-            <button 
+            <button
               onClick={() => router.push("/")}
               className="flex-1 h-18 bg-card/20 backdrop-blur-md border border-border/40 rounded-3xl flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em] text-foreground hover:bg-muted/10 transition-all group"
             >
               <ShoppingBag className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               Continuar Comprando
             </button>
-            <button 
+            <button
               onClick={() => router.push("/perfil")}
               className="flex-1 h-18 bg-card/20 backdrop-blur-md border border-border/40 rounded-3xl flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em] text-foreground hover:bg-primary/20 hover:border-primary/40 transition-all group"
             >

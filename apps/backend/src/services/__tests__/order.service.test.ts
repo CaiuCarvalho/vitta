@@ -17,7 +17,7 @@ describe('OrderService', () => {
   describe('createOrder', () => {
     it('should throw an error if no items are provided', async () => {
       await expect(OrderService.createOrder({ userId: 'u1', items: [] }))
-        .rejects.toThrow('Order must have at least one item.');
+        .rejects.toThrow('O pedido deve ter pelo menos um item.');
     });
 
     it('should throw an error if a product does not have enough stock', async () => {

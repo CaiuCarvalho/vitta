@@ -33,9 +33,9 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
         <p className="text-sm text-muted-foreground max-w-xs mb-8">
           Você ainda não realizou nenhuma compra na Agon. Nossos melhores mantos estão te esperando!
         </p>
-        <Button 
-          variant="outline" 
-          className="uppercase font-black tracking-[0.2em] text-[10px] h-12 px-8 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all" 
+        <Button
+          variant="outline"
+          className="uppercase font-black tracking-[0.2em] text-[10px] h-12 px-8 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all"
           asChild
         >
           <a href="/#produtos">Explorar a Loja Agon</a>

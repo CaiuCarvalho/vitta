@@ -3,16 +3,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User as UserIcon, 
-  MapPin, 
-  ShoppingBag, 
-  ShieldCheck, 
-  LogOut, 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  CheckCircle2, 
+import {
+  User as UserIcon,
+  MapPin,
+  ShoppingBag,
+  ShieldCheck,
+  LogOut,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle2,
   ChevronRight,
   Camera,
   Loader2
@@ -57,17 +57,17 @@ export default function PerfilPage() {
   // Fetch Full User Data
   const fetchData = useCallback(async () => {
     if (!token || !user?.id) return;
-    
+
     setIsDataLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
-      
+
       // Get User Details
       const userRes = await fetch(`${apiUrl}/api/users/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userData = await userRes.json();
-      
+
       if (userData.data) {
         setProfileData({
           name: userData.data.name || "",
@@ -97,34 +97,34 @@ export default function PerfilPage() {
   // Handle Profile Update
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if sensitive data changed
     const userOriginal = user as any; // useAuth stores basic info
     const hasTaxIdChanged = profileData.taxId !== (userOriginal?.taxId || "");
     // Note: Email change logic would go here if we had an email field in the form
-    
+
     if (hasTaxIdChanged) {
       setVerificationType("TAXID_UPDATE");
       setPendingValue(profileData.taxId);
-      
+
       // Request verification token
       setIsSaving(true);
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
         const res = await fetch(`${apiUrl}/api/users/${user?.id}/update-request`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}` 
+            Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({ type: "TAXID_UPDATE", newValue: profileData.taxId })
         });
-        
+
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.message || "Erro ao solicitar verificação.");
         }
-        
+
         setIsVerificationModalOpen(true);
       } catch (error: any) {
         toast.error(error.message);
@@ -140,13 +140,13 @@ export default function PerfilPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
       const res = await fetch(`${apiUrl}/api/users/${user?.id}/profile`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ name: profileData.name, phone: profileData.phone, avatarUrl: profileData.avatarUrl })
       });
-      
+
       const result = await res.json();
       if (res.ok) {
         updateUser({ name: profileData.name, avatarUrl: profileData.avatarUrl });
@@ -168,13 +168,13 @@ export default function PerfilPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
       const res = await fetch(`${apiUrl}/api/users/${user?.id}/update-confirm`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ token: otpToken, type: verificationType })
       });
-      
+
       const result = await res.json();
       if (res.ok) {
         toast.success("Informação confirmada e atualizada!");
@@ -197,13 +197,13 @@ export default function PerfilPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
       const res = await fetch(`${apiUrl}/api/users/${user?.id}/profile`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ avatarUrl })
       });
-      
+
       const result = await res.json();
       if (res.ok) {
         updateUser({ avatarUrl });
@@ -225,19 +225,19 @@ export default function PerfilPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
       const method = editingAddress ? "PUT" : "POST";
-      const url = editingAddress 
-        ? `${apiUrl}/api/users/${user?.id}/addresses/${editingAddress.id}` 
+      const url = editingAddress
+        ? `${apiUrl}/api/users/${user?.id}/addresses/${editingAddress.id}`
         : `${apiUrl}/api/users/${user?.id}/addresses`;
-      
+
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(data)
       });
-      
+
       if (res.ok) {
         toast.success(editingAddress ? "Endereço atualizado!" : "Endereço cadastrado!");
         setIsAddressModalOpen(false);
@@ -256,14 +256,14 @@ export default function PerfilPage() {
 
   const handleDeleteAddress = async (addressId: string) => {
     if (!confirm("Tem certeza que deseja excluir este endereço?")) return;
-    
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://agonimports.com/api";
       const res = await fetch(`${apiUrl}/api/users/${user?.id}/addresses/${addressId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         toast.success("Endereço removido.");
         fetchData();
@@ -283,7 +283,7 @@ export default function PerfilPage() {
 
   return (
     <div className="container mx-auto px-6 py-12 md:py-24">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-5xl mx-auto"
@@ -298,7 +298,7 @@ export default function PerfilPage() {
                   {user?.name?.[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsAvatarSelectorOpen(true)}
                 className="absolute bottom-0 right-0 h-10 w-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-4 border-background hover:scale-110 transition-transform shadow-lg z-20"
@@ -356,16 +356,16 @@ export default function PerfilPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Nome Completo</Label>
-                                <Input 
-                                  value={profileData.name} 
-                                  onChange={e => setProfileData({...profileData, name: e.target.value})}
+                                <Input
+                                  value={profileData.name}
+                                  onChange={e => setProfileData({ ...profileData, name: e.target.value })}
                                 />
                               </div>
                               <div className="space-y-2">
                                 <Label className="text-xs uppercase tracking-widest font-bold text-muted-foreground">E-mail (Login)</Label>
-                                <Input 
-                                  value={user?.email || ""} 
-                                  disabled 
+                                <Input
+                                  value={user?.email || ""}
+                                  disabled
                                   className="bg-muted/40 cursor-not-allowed text-muted-foreground"
                                 />
                               </div>
@@ -373,18 +373,18 @@ export default function PerfilPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Telefone / WhatsApp</Label>
-                                <Input 
+                                <Input
                                   placeholder="(11) 99999-9999"
-                                  value={profileData.phone} 
-                                  onChange={e => setProfileData({...profileData, phone: e.target.value})}
+                                  value={profileData.phone}
+                                  onChange={e => setProfileData({ ...profileData, phone: e.target.value })}
                                 />
                               </div>
                               <div className="space-y-2">
                                 <Label className="text-xs uppercase tracking-widest font-bold text-muted-foreground">CPF (Seguro)</Label>
-                                <Input 
+                                <Input
                                   placeholder="000.000.000-00"
-                                  value={profileData.taxId} 
-                                  onChange={e => setProfileData({...profileData, taxId: e.target.value})}
+                                  value={profileData.taxId}
+                                  onChange={e => setProfileData({ ...profileData, taxId: e.target.value })}
                                 />
                                 {profileData.taxId !== (user as any)?.taxId && profileData.taxId.length > 0 && (
                                   <p className="text-[9px] text-primary uppercase font-black animate-pulse">
@@ -468,13 +468,13 @@ export default function PerfilPage() {
                           CEP: {address.zipCode}
                         </p>
                         <div className="flex items-center gap-3 pt-4 border-t border-border/20">
-                          <button 
+                          <button
                             onClick={() => { setEditingAddress(address); setIsAddressModalOpen(true); }}
                             className="text-[10px] uppercase font-bold text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
                           >
                             <Pencil className="h-3 w-3" /> Editar
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDeleteAddress(address.id)}
                             className="text-[10px] uppercase font-bold text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
                           >
@@ -505,12 +505,12 @@ export default function PerfilPage() {
                   <h2 className="text-xl font-display uppercase tracking-widest">Histórico de Pedidos</h2>
                   <p className="text-xs text-muted-foreground mt-1">Acompanhe o status e rastreamento das suas compras.</p>
                 </div>
-                
-                <OrderList 
-                  orders={orders} 
+
+                <OrderList
+                  orders={orders}
                   onViewDetails={(order) => {
                     toast.info(`Visualizando detalhes do pedido #${order.id.slice(0, 8)}`);
-                  }} 
+                  }}
                 />
               </motion.div>
             </TabsContent>
@@ -519,7 +519,7 @@ export default function PerfilPage() {
       </motion.div>
 
       {/* MODALS */}
-      <AddressForm 
+      <AddressForm
         isOpen={isAddressModalOpen}
         onClose={() => { setIsAddressModalOpen(false); setEditingAddress(null); }}
         onSave={handleSaveAddress}
@@ -527,14 +527,14 @@ export default function PerfilPage() {
         isLoading={isSaving}
       />
 
-      <AvatarSelector 
+      <AvatarSelector
         isOpen={isAvatarSelectorOpen}
         onClose={() => setIsAvatarSelectorOpen(false)}
         onSelect={handleAvatarSelect}
         currentAvatar={profileData.avatarUrl}
       />
 
-      <VerificationModal 
+      <VerificationModal
         isOpen={isVerificationModalOpen}
         onClose={() => setIsVerificationModalOpen(false)}
         onConfirm={handleVerifyConfirm}
